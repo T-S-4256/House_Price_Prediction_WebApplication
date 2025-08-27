@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify, send_from_directory
 import numpy as np
 import pickle
 
@@ -32,6 +32,16 @@ def predict():
         
         return render_template('index.html', prediction_text=f'Estimated House Price: ${prediction}')
     return render_template('index.html')
+@app.route('/healthz')
+def healthz():
+    return jsonify({"status": "ok"}), 200
+
+# Serve robots.txt to avoid 404s in logs
+@app.route('/robots.txt')
+def robots_txt():
+    return send_from_directory(app.static_folder, 'robots.txt')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))  # Use Render’s $PORT
+    app.run(host='0.0.0.0', port=port, debug=True)
+
