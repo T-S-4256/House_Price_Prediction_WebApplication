@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Price Prediction</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to enhance the UI */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Added a background image */
+            background-image: url('https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=1974&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        /* Custom focus style for better accessibility */
+        .form-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* blue-500 with 50% opacity */
+            border-color: #3B82F6; /* blue-500 */
+        }
+        /* Transition for smooth effects */
+        .transition-all {
+            transition: all 0.3s ease-in-out;
+        }
+        /* Style for the main card to make it semi-transparent */
+        .main-card {
+            background-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); /* For Safari support */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main container card with new semi-transparent style -->
+    <div class="main-card w-full max-w-4xl rounded-2xl shadow-lg p-6 sm:p-8 md:p-12">
+        
+        <!-- Header Section -->
+        <div class="text-center mb-10">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">House Price Prediction</h1>
+            <p class="text-gray-600 mt-2">Enter the details below to get an estimated property value.</p>
+        </div>
+
+        <!-- Prediction Form -->
+        <form id="prediction-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Input Fields -->
+            <input type="text" name="MedInc" placeholder="Median Income" required class="form-input w-full px-4 py-3 bg-gray-50/50 border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+            <input type="text" name="HouseAge" placeholder="House Age" required class="form-input w-full px-4 py-3 bg-gray-50/50 border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+            <input type="text" name="AveRooms" placeholder="Average Rooms" required class="form-input w-full px-4 py-3 bg-gray-50/50 border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+            <input type="text" name="AveBedrms" placeholder="Average Bedrooms" required class="form-input w-full px-4 py-3 bg-gray-50/50 border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+            <input type="text" name="Population" placeholder="Population" required class="form-input w-full px-4 py-3 bg-gray-50/50 border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+            <input type="text" name="AveOccup" placeholder="Average Occupancy" required class="form-input w-full px-4 py-3 bg-gray-50/50 border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+            <input type="text" name="Latitude" placeholder="Latitude" required class="form-input w-full px-4 py-3 bg-gray-50/50 border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+            <input type="text" name="Longitude" placeholder="Longitude" required class="form-input w-full px-4 py-3 bg-gray-50/50 border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition-all" />
+
+            <!-- Submit Button -->
+            <button type="submit" id="predict-button" class="md:col-span-2 w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all transform hover:scale-105">
+                Predict Price
+            </button>
+        </form>
+
+        <!-- Result Display Section -->
+        <div id="result-section" class="hidden mt-10 text-center p-6 bg-blue-50/70 border-2 border-dashed border-blue-200 rounded-lg">
+            <h2 class="text-xl font-semibold text-gray-700">Predicted House Price:</h2>
+            <p id="predicted-price" class="text-4xl font-bold text-blue-600 mt-2"></p>
+        </div>
+
+    </div>
+
+    <script>
+        // Get references to the DOM elements
+        const form = document.getElementById('prediction-form');
+        const predictButton = document.getElementById('predict-button');
+        const resultSection = document.getElementById('result-section');
+        const predictedPriceEl = document.getElementById('predicted-price');
+
+        // Listen for form submission
+        form.addEventListener('submit', function(event) {
+            // Prevent the default form submission which reloads the page
+            event.preventDefault();
+
+            // --- Form Validation ---
+            let isValid = true;
+            const inputs = form.querySelectorAll('input[required]');
+            inputs.forEach(input => {
+                // Check if the input is empty
+                if (!input.value.trim()) {
+                    isValid = false;
+                    // Add a visual indicator for invalid fields
+                    input.classList.add('border-red-500');
+                } 
+                // Check if the input is not a number
+                else if (isNaN(parseFloat(input.value))) {
+                    isValid = false;
+                    input.classList.add('border-red-500');
+                }
+                else {
+                    // Remove the visual indicator if the field is valid
+                    input.classList.remove('border-red-500');
+                }
+            });
+
+            if (!isValid) {
+                // If the form is not valid, do not proceed
+                // You could show a more prominent error message here
+                return;
+            }
+
+            // --- Simulate Prediction ---
+            // Change button text to show it's working
+            predictButton.textContent = 'Predicting...';
+            predictButton.disabled = true;
+            predictButton.classList.add('opacity-75', 'cursor-not-allowed');
+
+            // Simulate a delay for an API call (e.g., 1.5 seconds)
+            setTimeout(() => {
+                // In a real application, you would send the form data to your model's API endpoint here.
+                // For this example, we'll generate a random price.
+                const randomPrice = 150000 + Math.random() * 350000; // Random price between $150k and $500k
+                
+                // Format the price to look like currency
+                const formattedPrice = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                }).format(randomPrice);
+
+                // Display the result
+                predictedPriceEl.textContent = formattedPrice;
+                resultSection.classList.remove('hidden');
+
+                // Restore the button to its original state
+                predictButton.textContent = 'Predict Price';
+                predictButton.disabled = false;
+                predictButton.classList.remove('opacity-75', 'cursor-not-allowed');
+
+            }, 1500);
+        });
+
+        // Add event listeners to remove the red border on input
+        form.querySelectorAll('input[required]').forEach(input => {
+            input.addEventListener('input', () => {
+                if (input.value.trim() && !isNaN(parseFloat(input.value))) {
+                    input.classList.remove('border-red-500');
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
